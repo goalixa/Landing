@@ -1,0 +1,9 @@
+version: "3.9"
+
+services:
+  goalixa-landing:
+    build: .
+    container_name: goalixa-landing
+    ports:
+      - "8080:80"
+    restart: always
