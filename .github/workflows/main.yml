@@ -2,7 +2,7 @@ name: Build & Push Landing Image
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
 
 permissions:
   contents: read
@@ -26,8 +26,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set image name (lowercase)
-        run: |
-          echo "IMAGE_NAME=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/landing" >> $GITHUB_ENV
+        run: echo "IMAGE_NAME=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/landing" >> $GITHUB_ENV
 
       - name: Build and Push
         uses: docker/build-push-action@v6
@@ -49,6 +48,6 @@ jobs:
         run: |
           echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u "${{ secrets.GHCR_USERNAME }}" --password-stdin
 
-      - name: Deploy stack
+      - name: Deploy stack (Swarm)
         run: |
-          docker stack deploy --resolve-image always -c /opt/goalixa-swarm/stack.yml goalixa
+          docker stack deploy --with-registry-auth --resolve-image always -c /opt/goalixa-swarm/stack.yml goalixa
