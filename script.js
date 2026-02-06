@@ -1,5 +1,23 @@
+// Helper function to get cookie value
+function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+    return null;
+}
+
+// Check authentication and redirect
 // Mobile menu toggle
 document.addEventListener('DOMContentLoaded', function() {
+    // Check for authentication cookie
+    const authCookie = getCookie('goalixa_auth');
+
+    // If authenticated, redirect to app
+    if (authCookie && authCookie.length > 0) {
+        window.location.href = 'https://app.goalixa.com';
+        return;
+    }
+
     const menuToggle = document.querySelector('.menu-toggle');
     const navMenu = document.querySelector('.nav-menu');
     
