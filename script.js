@@ -20,6 +20,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const menuToggle = document.querySelector('.menu-toggle');
     const navMenu = document.querySelector('.nav-menu');
+    const installBtn = document.getElementById('install-btn');
     
     if (menuToggle) {
         menuToggle.addEventListener('click', function() {
@@ -155,5 +156,38 @@ document.addEventListener('DOMContentLoaded', function() {
         }, { threshold: 0.5 });
         
         stats.forEach(stat => statsObserver.observe(stat));
+    }
+
+    // PWA install prompt handling
+    if (installBtn) {
+        let deferredPrompt = null;
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
+            window.navigator.standalone === true;
+
+        const showInstall = () => installBtn.classList.add('visible');
+        const hideInstall = () => installBtn.classList.remove('visible');
+
+        if (isStandalone) {
+            hideInstall();
+        }
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            showInstall();
+        });
+
+        installBtn.addEventListener('click', async () => {
+            if (!deferredPrompt) return;
+            deferredPrompt.prompt();
+            await deferredPrompt.userChoice;
+            deferredPrompt = null;
+            hideInstall();
+        });
+
+        window.addEventListener('appinstalled', () => {
+            deferredPrompt = null;
+            hideInstall();
+        });
     }
 });
