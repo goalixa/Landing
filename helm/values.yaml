@@ -1,0 +1,14 @@
+image:
+  registry: harbor.goalixa.com
+  repository: goalixa/landing
+  tag: "latest"
+  pullPolicy: Always
+
+replicaCount: 1
+
+service:
+  type: ClusterIP
+  port: 80
+
+namespace:
+  name: goalixa-landing

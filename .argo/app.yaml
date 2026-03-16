@@ -3,21 +3,16 @@ kind: Application
 metadata:
   name: goalixa-landing
   namespace: argocd
-  finalizers:
-    - resources-finalizer.argocd.argoproj.io
-  labels:
-    app.kubernetes.io/name: landing
-    app.kubernetes.io/part-of: goalixa
-  annotations:
-    argocd-image-updater.argoproj.io/image-list: harbor.goalixa.com/goalixa-landing/landing
-    argocd-image-updater.argoproj.io/harbor.goalixa.com/goalixa-landing/landing.update-strategy: latest
-    argocd-image-updater.argoproj.io/harbor.goalixa.com/goalixa-landing/landing.force-update: "true"
 spec:
   project: default
   source:
-    repoURL: https://github.com/goalixa/Landing.git
+    repoURL: https://github.com/goalixa/goalixa-landing.git
     targetRevision: main
-    path: k8s
+    path: helm
+    helm:
+      parameters:
+        - name: image.tag
+          value: latest
   destination:
     server: https://kubernetes.default.svc
     namespace: goalixa-landing
@@ -27,18 +22,3 @@ spec:
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
-      - RespectIgnoreDifferences=true
-    managedNamespaceMetadata:
-      labels:
-        app.kubernetes.io/part-of: goalixa
-    ignoreDifferences:
-      - group: apps
-        kind: Deployment
-        jsonPointers:
-          - /spec/containers/0/image
-    retry:
-      limit: 5
-      backoff:
-        duration: 5s
-        factor: 2
-        maxDuration: 3m
