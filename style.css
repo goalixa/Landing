@@ -4,7 +4,6 @@
     padding: 0;
     box-sizing: border-box;
 }
-
 :root {
     --primary: #22c55e; /* Modern green */
     --primary-dark: #16a34a;
