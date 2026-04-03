@@ -1,0 +1,10 @@
+# Production values for goalixa-landing
+# Override default values for production environment
+
+image:
+  tag: "latest"  # Overridden by GitHub workflow
+
+replicaCount: 2
+
+namespace:
+  name: goalixa-landing
