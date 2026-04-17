@@ -1,5 +1,5 @@
 // Staging environment deployment
-// Helper function to get cookie value
+// Helper function to get cookie value.
 function getCookie(name) {
     const value = `; ${document.cookie}`;
     const parts = value.split(`; ${name}=`);
