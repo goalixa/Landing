@@ -8,5 +8,14 @@ image:
 
 replicaCount: 1
 
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: true
+  host: "landing.goalixa.com"
+  tls: false
+
 namespace:
   name: goalixa-landing-staging
