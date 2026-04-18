@@ -12,7 +12,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/goalixa/goalixa-landing.git
+    repoURL: https://github.com/goalixa/Landing.git
     targetRevision: main
     path: helm
     helm:
