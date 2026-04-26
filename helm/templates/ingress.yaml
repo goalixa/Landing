@@ -4,12 +4,10 @@ kind: Ingress
 metadata:
   name: landing
   namespace: {{ .Values.namespace.name }}
-  annotations:
-    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
   labels:
     {{- include "goalixa-landing.labels" . | nindent 4 }}
 spec:
-  ingressClassName: traefik
+  ingressClassName: nginx
   rules:
     - host: {{ .Values.ingress.host | quote }}
       http:
