@@ -58,17 +58,13 @@ export default function Hero() {
               transition={{ delay: 0.4, duration: 0.6 }}
               className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start"
             >
-              <Button asChild variant="primary" size="lg">
-                <a href="https://app.goalixa.com/signup">
-                  <Rocket size={20} />
-                  Let's Go!
-                </a>
+              <Button href="https://app.goalixa.com/signup" variant="primary" size="lg">
+                <Rocket size={20} />
+                Let's Go!
               </Button>
-              <Button asChild variant="outline" size="lg">
-                <a href="#demo">
-                  <Play size={20} />
-                  Watch Demo
-                </a>
+              <Button href="#demo" variant="outline" size="lg">
+                <Play size={20} />
+                Watch Demo
               </Button>
             </motion.div>
 

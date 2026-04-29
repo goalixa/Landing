@@ -57,20 +57,10 @@ export default function Navigation() {
 
           {/* CTA Buttons - Desktop */}
           <div className="hidden md:flex items-center gap-3">
-            <Button
-              asChild
-              href="https://app.goalixa.com/login"
-              variant="ghost"
-              size="sm"
-            >
+            <Button href="https://app.goalixa.com/login" variant="ghost" size="sm">
               Sign In
             </Button>
-            <Button
-              asChild
-              href="https://app.goalixa.com/signup"
-              variant="primary"
-              size="sm"
-            >
+            <Button href="https://app.goalixa.com/signup" variant="primary" size="sm">
               Get Started Free
             </Button>
           </div>
@@ -100,20 +90,10 @@ export default function Navigation() {
                 </a>
               ))}
               <div className="flex flex-col gap-2 px-4 pt-4 border-t border-light-border">
-                <Button
-                  asChild
-                  href="https://app.goalixa.com/login"
-                  variant="outline"
-                  size="md"
-                >
+                <Button href="https://app.goalixa.com/login" variant="outline" size="md">
                   Sign In
                 </Button>
-                <Button
-                  asChild
-                  href="https://app.goalixa.com/signup"
-                  variant="primary"
-                  size="md"
-                >
+                <Button href="https://app.goalixa.com/signup" variant="primary" size="md">
                   Get Started Free
                 </Button>
               </div>

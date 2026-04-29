@@ -8,12 +8,12 @@ export default function Features() {
 
   return (
     <section id="features" className="py-20 md:py-32 bg-white">
-      <div className="container-custom">
+      <div className="container-custom" ref={ref}>
         {/* Section Header */}
         <div className="text-center mb-16">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
-            animate={inView ? { opacity: 1, y: 0 } : {}}
+            animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
             transition={{ duration: 0.5 }}
           >
             <span className="inline-block bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-semibold mb-4">
@@ -30,7 +30,7 @@ export default function Features() {
         </div>
 
         {/* Features Grid - Bento Layout */}
-        <div ref={ref} className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {features.map((feature, index) => (
             <motion.div
               key={feature.title}
