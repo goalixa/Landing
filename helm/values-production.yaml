@@ -1,10 +1,23 @@
 # Production values for goalixa-landing
 # Override default values for production environment
+# Deployed to: goalixa-landing namespace
 
 image:
-  tag: "latest"  # Overridden by GitHub workflow
+  registry: harbor.goalixa.com
+  repository: goalixa/landing
+  tag: "latest"  # Overridden by GitHub workflow with commit SHA
+  pullPolicy: Always
 
 replicaCount: 2
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: true
+  host: "goalixa.com"
+  tls: true
 
 namespace:
   name: goalixa-landing
