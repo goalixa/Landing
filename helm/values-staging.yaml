@@ -1,0 +1,23 @@
+# Staging values for goalixa-landing
+# Override default values for staging environment
+# Deployed to: goalixa-landing-staging namespace
+
+image:
+  registry: harbor.goalixa.com
+  repository: landing-staging/landing
+  tag: "latest"  # Overridden by GitHub workflow with commit SHA
+  pullPolicy: Always
+
+replicaCount: 1
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: true
+  host: "landing-staging.goalixa.com"  # Staging subdomain
+  tls: false
+
+namespace:
+  name: goalixa-landing-staging

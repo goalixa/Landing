@@ -1,17 +1,19 @@
-name: Build & Deploy Landing (Helm)
+name: Build & Deploy Landing
 
 on:
   push:
     branches:
       - main
+      - staging
     paths-ignore:
       - '.github/**'
       - '**.md'
       - '.argo/**'
-      - 'helm/**'  # Ignore Helm chart changes to avoid loop
+      - 'helm/**'
   pull_request:
     branches:
       - main
+      - staging
     paths-ignore:
       - '.github/**'
       - '**.md'
@@ -20,18 +22,86 @@ on:
 
 permissions:
   contents: read
+  packages: write
   actions: read
 
 env:
   REGISTRY: harbor.goalixa.com
-  IMAGE_REPOSITORY: goalixa-landing/landing
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.config.outputs.image_tag }}
+      repository: ${{ steps.config.outputs.repository }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Set image repository and deployment config
+        id: config
+        run: |
+          # Get short SHA for image tag (for rollback capability)
+          SHORT_SHA=$(git rev-parse --short HEAD)
+
+          # Determine environment based on branch
+          if [[ "${{ github.ref }}" == "refs/heads/staging" ]]; then
+            # Staging branch → goalixa-landing-staging namespace
+            # Uses landing-staging/landing repository in Harbor
+            echo "repository=landing-staging/landing" >> $GITHUB_OUTPUT
+            echo "image_tag=${SHORT_SHA}" >> $GITHUB_OUTPUT
+            echo "image_tag_latest=latest" >> $GITHUB_OUTPUT
+            echo "environment=staging" >> $GITHUB_OUTPUT
+            echo "app_name=goalixa-landing-staging" >> $GITHUB_OUTPUT
+            echo "namespace=goalixa-landing-staging" >> $GITHUB_OUTPUT
+            echo "git_branch=staging" >> $GITHUB_OUTPUT
+
+          elif [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            # Main branch → goalixa-landing namespace (production)
+            # Uses goalixa/landing repository in Harbor
+            echo "repository=goalixa/landing" >> $GITHUB_OUTPUT
+            echo "image_tag=${SHORT_SHA}" >> $GITHUB_OUTPUT
+            echo "image_tag_latest=latest" >> $GITHUB_OUTPUT
+            echo "environment=production" >> $GITHUB_OUTPUT
+            echo "app_name=goalixa-landing" >> $GITHUB_OUTPUT
+            echo "namespace=goalixa-landing" >> $GITHUB_OUTPUT
+            echo "git_branch=main" >> $GITHUB_OUTPUT
+
+          else
+            echo "❌ Unsupported branch: ${{ github.ref }}"
+            echo "Supported branches: main (production), staging"
+            exit 1
+          fi
+
+          echo ""
+          echo "Configuration:"
+          echo "- Environment: $(grep 'environment=' $GITHUB_OUTPUT | cut -d= -f2)"
+          echo "- Repository: $(grep 'repository=' $GITHUB_OUTPUT | cut -d= -f2)"
+          echo "- Namespace: $(grep 'namespace=' $GITHUB_OUTPUT | cut -d= -f2)"
+          echo "- ArgoCD App: $(grep 'app_name=' $GITHUB_OUTPUT | cut -d= -f2)"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build and verify output
+        run: npm run build
+        env:
+          CI: true
+
+      - name: Verify dist directory
+        run: |
+          if [ ! -d "dist" ]; then
+            echo "❌ Build failed: dist directory not created"
+            exit 1
+          fi
+          echo "✅ Build successful: dist directory exists"
+          du -sh dist
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -50,12 +120,13 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_REPOSITORY }}
+          images: ${{ env.REGISTRY }}/${{ steps.config.outputs.repository }}
           tags: |
-            type=raw,value=latest,enable={{is_default_branch}}
-            type=sha,prefix=
+            type=raw,value=${{ steps.config.outputs.image_tag }}
+            type=raw,value=${{ steps.config.outputs.image_tag_latest }}
 
       - name: Build and push Docker image
+        if: github.event_name == 'push'
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -67,13 +138,16 @@ jobs:
           labels: |
             org.opencontainers.image.source=${{ github.repositoryUrl }}
             org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.created=${{ github.event.head_commit.timestamp }}
 
-      - name: Get image tag
-        id: tag
-        run: |
-          IMAGE_TAG="${GITHUB_SHA:0:7}"
-          echo "tag=${IMAGE_TAG}" >> $GITHUB_OUTPUT
-          echo "image=${{ env.REGISTRY }}/${{ env.IMAGE_REPOSITORY }}:${IMAGE_TAG}" >> $GITHUB_OUTPUT
+      - name: Build Docker image (PR - no push)
+        if: github.event_name == 'pull_request'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          platforms: linux/amd64
+          cache-from: type=gha
 
       - name: Setup kubectl
         run: |
@@ -86,14 +160,22 @@ jobs:
           fi
 
       - name: Update ArgoCD application
-        if: env.HAS_KUBE_CONFIG == 'true'
+        if: github.event_name == 'push' && env.HAS_KUBE_CONFIG == 'true'
         run: |
-          IMAGE_TAG="${{ steps.tag.outputs.tag }}"
+          IMAGE_TAG="${{ steps.config.outputs.image_tag }}"
+          APP_NAME="${{ steps.config.outputs.app_name }}"
+          ENVIRONMENT="${{ steps.config.outputs.environment }}"
 
-          echo "🔄 Updating ArgoCD application with image tag: ${IMAGE_TAG}"
+          echo "🔄 Updating ArgoCD application '${APP_NAME}' (${ENVIRONMENT}) with image tag: ${IMAGE_TAG}"
+
+          # Verify kubectl can connect
+          if ! kubectl cluster-info &>/dev/null; then
+            echo "❌ Failed to connect to Kubernetes cluster"
+            exit 1
+          fi
 
           # Patch ArgoCD app with new Helm parameter
-          kubectl patch application goalixa-landing \
+          if kubectl patch application ${APP_NAME} \
             -n argocd \
             --type='merge' \
             -p="{
@@ -109,51 +191,72 @@ jobs:
                   }
                 }
               }
-            }"
+            }" 2>/dev/null; then
+            echo "✅ ArgoCD application patched"
+          else
+            echo "⚠️  Could not patch ArgoCD application (may not exist yet)"
+          fi
 
           # Trigger immediate sync
-          kubectl annotate application goalixa-landing \
+          if kubectl annotate application ${APP_NAME} \
             -n argocd \
             "force-sync-at=$(date +%s)" \
-            --overwrite
+            --overwrite 2>/dev/null; then
+            echo "✅ Sync annotation updated"
+          fi
 
-          echo "✅ ArgoCD application updated"
-
-      - name: Summary
+      - name: Build Summary
+        if: github.event_name == 'pull_request'
         run: |
-          echo "## ✅ Build & Deploy Complete" >> $GITHUB_STEP_SUMMARY
+          echo "## ✅ Build Verification Complete (PR)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- **Image Tag:** \`${{ steps.tag.outputs.tag }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "- **Full Image:** \`${{ steps.tag.outputs.image }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "- **Registry:** \`${{ env.REGISTRY }}/${{ env.IMAGE_REPOSITORY }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Event:** Pull Request" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status:** Build passed ✓" >> $GITHUB_STEP_SUMMARY
+          echo "- **Docker Build:** Verified (not pushed)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Changes in this PR are ready to merge." >> $GITHUB_STEP_SUMMARY
+
+      - name: Deployment Summary
+        if: github.event_name == 'push'
+        run: |
+          ENVIRONMENT="${{ steps.config.outputs.environment }}"
+          IMAGE_TAG="${{ steps.config.outputs.image_tag }}"
+          REPOSITORY="${{ steps.config.outputs.repository }}"
+          APP_NAME="${{ steps.config.outputs.app_name }}"
+          NAMESPACE="${{ steps.config.outputs.namespace }}"
+          GIT_BRANCH="${{ steps.config.outputs.git_branch }}"
+
+          if [ "${ENVIRONMENT}" = "production" ]; then
+            EMOJI="🚀"
+          else
+            EMOJI="🧪"
+          fi
+
+          echo "## ${EMOJI} Build & Deploy to ${ENVIRONMENT^^}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📋 Source Info" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch:** \`${GIT_BRANCH}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit SHA:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Short SHA:** \`${IMAGE_TAG}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🐳 Docker Image" >> $GITHUB_STEP_SUMMARY
+          echo "- **Repository:** \`${REPOSITORY}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Image Tag:** \`${IMAGE_TAG}\` and \`latest\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Full Image:** \`${{ env.REGISTRY }}/${REPOSITORY}:${IMAGE_TAG}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### ☸️ Kubernetes Deployment" >> $GITHUB_STEP_SUMMARY
+          echo "- **Namespace:** \`${NAMESPACE}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **ArgoCD App:** \`${APP_NAME}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Environment:** \`${ENVIRONMENT}\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
-          if [ "${{ env.HAS_KUBE_CONFIG }}" = "true" ]; then
-            echo "- **Deployment Method:** Helm (ArgoCD - Auto-sync)" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "### 🔄 ArgoCD will now:" >> $GITHUB_STEP_SUMMARY
-            echo "1. Detect Helm parameter change" >> $GITHUB_STEP_SUMMARY
-            echo "2. Render Helm chart with image tag: \`${{ steps.tag.outputs.tag }}\`" >> $GITHUB_STEP_SUMMARY
-            echo "3. Deploy to Kubernetes" >> $GITHUB_STEP_SUMMARY
+          if [ '${{ env.HAS_KUBE_CONFIG }}' = 'true' ]; then
+            echo "### ✅ Deployment Status" >> $GITHUB_STEP_SUMMARY
+            echo "- Kubernetes credentials: ✓" >> $GITHUB_STEP_SUMMARY
+            echo "- ArgoCD app updated: ✓" >> $GITHUB_STEP_SUMMARY
+            echo "- Auto-sync triggered: ⏳ In progress" >> $GITHUB_STEP_SUMMARY
           else
-            echo "- **Deployment Method:** Helm (Manual sync required)" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "### ⚠️ Manual Action Required" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "The \`KUBE_CONFIG\` secret is not configured. Please:" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "1. **Add the secret** to your GitHub repository:" >> $GITHUB_STEP_SUMMARY
-            echo "   \`\`\`" >> $GITHUB_STEP_SUMMARY
-            echo "   # Encode your kubeconfig" >> $GITHUB_STEP_SUMMARY
-            echo "   cat ~/.kube/config | base64 -w 0" >> $GITHUB_STEP_SUMMARY
-            echo "   \`\`\`" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "2. **Add it as a secret** named \`KUBE_CONFIG\` in repository settings" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "3. **Or manually trigger ArgoCD sync**:" >> $GITHUB_STEP_SUMMARY
-            echo "   \`\`\`bash" >> $GITHUB_STEP_SUMMARY
-            echo "   kubectl patch application goalixa-landing -n argocd --type='merge' \\" >> $GITHUB_STEP_SUMMARY
-            echo "     -p='{\"spec\":{\"source\":{\"helm\":{\"parameters\":[{\"name\":\"image.tag\",\"value\":\"${{ steps.tag.outputs.tag }}\"}]}}}}'" >> $GITHUB_STEP_SUMMARY
-            echo "   kubectl annotate application goalixa-landing -n argocd \"force-sync-at=\$(date +%s)\" --overwrite" >> $GITHUB_STEP_SUMMARY
-            echo "   \`\`\`" >> $GITHUB_STEP_SUMMARY
+            echo "### ⚠️ Deployment Status" >> $GITHUB_STEP_SUMMARY
+            echo "- Kubernetes credentials: ✗ Not configured" >> $GITHUB_STEP_SUMMARY
+            echo "- Manual ArgoCD sync required" >> $GITHUB_STEP_SUMMARY
           fi

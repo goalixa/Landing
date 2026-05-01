@@ -1,0 +1,22 @@
+{{- if .Values.ingress.enabled -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: landing
+  namespace: {{ .Values.namespace.name }}
+  labels:
+    {{- include "goalixa-landing.labels" . | nindent 4 }}
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: {{ .Values.ingress.host | quote }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: landing
+                port:
+                  number: {{ .Values.service.port }}
+{{- end }}
