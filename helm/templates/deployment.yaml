@@ -15,6 +15,10 @@ spec:
       labels:
         {{- include "goalixa-landing.selectorLabels" . | nindent 8 }}
     spec:
+      {{- if .Values.image.pullSecret }}
+      imagePullSecrets:
+        - name: {{ .Values.image.pullSecret }}
+      {{- end }}
       containers:
       - name: landing
         image: "{{ .Values.image.registry }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}"

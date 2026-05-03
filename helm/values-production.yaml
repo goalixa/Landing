@@ -7,6 +7,7 @@ image:
   repository: goalixa/landing
   tag: "latest"  # Overridden by GitHub workflow with commit SHA
   pullPolicy: Always
+  pullSecret: harbor-pull
 
 replicaCount: 2
 
