@@ -110,6 +110,3 @@ To update content (features, FAQs, etc.), edit:
 
 Created by Amirreza Rezaie. All rights reserved.
 
-## 📚 Documentation
-
-For full context, see `.claude/landing-redesign.md`
