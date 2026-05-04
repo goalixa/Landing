@@ -58,8 +58,8 @@ jobs:
 
           elif [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
             # Main branch → goalixa-landing namespace (production)
-            # Uses goalixa/landing repository in Harbor
-            echo "repository=goalixa/landing" >> $GITHUB_OUTPUT
+            # Uses goalixa-landing/landing repository in Harbor
+            echo "repository=goalixa-landing/landing" >> $GITHUB_OUTPUT
             echo "image_tag=${SHORT_SHA}" >> $GITHUB_OUTPUT
             echo "image_tag_latest=latest" >> $GITHUB_OUTPUT
             echo "environment=production" >> $GITHUB_OUTPUT
