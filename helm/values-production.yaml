@@ -4,7 +4,7 @@
 
 image:
   registry: harbor.goalixa.com
-  repository: goalixa/landing
+  repository: goalixa-landing/landing
   tag: "latest"  # Overridden by GitHub workflow with commit SHA
   pullPolicy: Always
   pullSecret: harbor-pull

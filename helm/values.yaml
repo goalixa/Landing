@@ -1,6 +1,6 @@
 image:
   registry: harbor.goalixa.com
-  repository: goalixa/landing
+  repository: goalixa-landing/landing
   tag: "latest"
   pullPolicy: Always
 
