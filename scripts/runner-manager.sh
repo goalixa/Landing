@@ -3,7 +3,7 @@
 # GitHub Actions Runner Management Script
 #
 # Usage:
-#   ./scripts/runner-manager.sh [status|start|stop|restart|logs|uninstall|update]
+#   ./scripts/runner-manager.sh [status|start|stop|restart|logs|uninstall|update].
 #
 
 RUNNER_DIR="/opt/github-runner"

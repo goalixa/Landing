@@ -8,6 +8,8 @@ import FAQ from './components/sections/FAQ'
 import CTA from './components/sections/CTA'
 import Footer from './components/layout/Footer'
 
+
+
 function App() {
   return (
     <div className="min-h-screen">
