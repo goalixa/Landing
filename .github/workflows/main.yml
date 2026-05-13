@@ -45,7 +45,14 @@ jobs:
           SHORT_SHA=$(git rev-parse --short HEAD)
 
           # Determine environment based on branch
-          if [[ "${{ github.ref }}" == "refs/heads/staging" ]]; then
+          # For PRs, use the base branch (target); for pushes, use ref
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            BRANCH="${{ github.base_ref }}"
+          else
+            BRANCH="${{ github.ref_name }}"
+          fi
+
+          if [[ "$BRANCH" == "staging" ]]; then
             # Staging branch → goalixa-landing-staging namespace
             # Uses landing-staging/landing repository in Harbor
             echo "repository=landing-staging/landing" >> $GITHUB_OUTPUT
@@ -56,7 +63,7 @@ jobs:
             echo "namespace=goalixa-landing-staging" >> $GITHUB_OUTPUT
             echo "git_branch=staging" >> $GITHUB_OUTPUT
 
-          elif [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+          elif [[ "$BRANCH" == "main" ]]; then
             # Main branch → goalixa-landing namespace (production)
             # Uses goalixa-landing/landing repository in Harbor
             echo "repository=goalixa-landing/landing" >> $GITHUB_OUTPUT
@@ -68,7 +75,7 @@ jobs:
             echo "git_branch=main" >> $GITHUB_OUTPUT
 
           else
-            echo "❌ Unsupported branch: ${{ github.ref }}"
+            echo "Unsupported branch: $BRANCH"
             echo "Supported branches: main (production), staging"
             exit 1
           fi
