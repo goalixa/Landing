@@ -79,6 +79,50 @@ docker run -p 80:80 goalixa-landing:latest
 
 This project is deployed to Kubernetes using ArgoCD GitOps.
 
+### Kubernetes with Helm
+
+```bash
+helm upgrade --install goalixa-landing ./helm \
+  --namespace goalixa-landing \
+  --create-namespace \
+  --values ./helm/values-production.yaml
+```
+
+### CI/CD Pipeline
+
+GitHub Actions workflow automatically:
+1. Builds Docker image on push to `main`
+2. Pushes to Harbor registry
+3. Updates ArgoCD application
+4. ArgoCD syncs deployment
+
+## Security
+
+### Content Security Policy (CSP)
+
+Configure at the ingress level:
+
+```yaml
+nginx.ingress.kubernetes.io/configuration-snippet: |
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://api.goalixa.com; font-src 'self' data:;";
+```
+
+### Security Headers
+
+The service should be behind nginx-ingress with:
+- **TLS 1.3**: Minimum TLS 1.2
+- **HSTS**: Enabled with subdomains
+- **X-Frame-Options**: DENY
+- **X-Content-Type-Options**: nosniff
+
+### Production Checklist
+
+- [ ] HTTPS enforced (redirect HTTP to HTTPS)
+- [ ] Security headers configured
+- [ ] CSP policy defined
+- [ ] Resource limits set
+- [ ] Health checks configured
+
 ## 📊 Performance Targets
 
 - **Lighthouse Score**: 95+
@@ -109,4 +153,10 @@ To update content (features, FAQs, etc.), edit:
 ## 📄 License
 
 Created by Amirreza Rezaie. All rights reserved.
+
+---
+
+**Last Updated**: 2026-05-13
+**Version**: 2.1.0
+**Production Ready**: ✅ Yes
 
