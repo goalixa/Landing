@@ -85,7 +85,7 @@ export default function Hero() {
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-green-500">✓</span>
-                2,500+ users
+                Works offline
               </div>
             </motion.div>
           </motion.div>

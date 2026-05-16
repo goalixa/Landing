@@ -119,8 +119,3 @@ export const faqs = [
   },
 ]
 
-export const socialProof = {
-  users: '2,500+',
-  tasksCompleted: '150,000+',
-  rating: '4.8',
-}
