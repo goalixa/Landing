@@ -1,162 +1,119 @@
-# Goalixa Landing Page v2.0
+# Goalixa Landing Page
 
-Modern, animated landing page built with React, TypeScript, Tailwind CSS, and Framer Motion.
+![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.4-3178C6?logo=typescript&logoColor=white)
+![Tailwind](https://img.shields.io/badge/Tailwind-3.4-06B6D4?logo=tailwindcss&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite-5.1-646CFF?logo=vite&logoColor=white)
+![License](https://img.shields.io/badge/License-MIT-green)
 
-## 🚀 Features
+Modern, animated landing page for Goalixa built with React and Framer Motion.
 
-- **React 18** + TypeScript for type safety
-- **TailwindCSS** for utility-first styling
-- **Framer Motion** for smooth animations
-- **Vite** for blazing-fast development
-- **Responsive** mobile-first design
-- **Optimized** for performance (Lighthouse 95+)
-- **SEO-ready** with meta tags
+## Tech Stack
 
-## 📁 Project Structure
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| React | 18.3 | UI framework |
+| TypeScript | 5.4 | Type safety |
+| Vite | 5.1 | Build tool |
+| Tailwind CSS | 3.4 | Styling |
+| Framer Motion | 11.0 | Animations |
+| Lucide Icons | - | Icon library |
+
+## Project Structure
 
 ```
 src/
 ├── components/
-│   ├── ui/              # Reusable UI components (Button, Card)
-│   ├── layout/          # Layout components (Navigation, Footer)
-│   ├── sections/        # Page sections (Hero, Features, etc.)
-│   └── animations/      # Animation wrappers
+│   ├── ui/           # Button, Card, etc.
+│   ├── layout/       # Navigation, Footer
+│   ├── sections/     # Hero, Features, etc.
+│   └── animations/   # Animation wrappers
 ├── lib/
-│   ├── utils.ts         # Utility functions
-│   └── constants.ts     # Content data
-├── App.tsx              # Main app component
-├── main.tsx             # Entry point
-└── index.css            # Global styles
+│   ├── utils.ts      # Utilities
+│   └── constants.ts  # Content data
+├── App.tsx
+├── main.tsx
+└── index.css
 ```
 
-## 🛠 Development
+## Getting Started
 
 ### Prerequisites
 
-- Node.js 18+ and npm
+- Node.js 18+
+- npm or yarn
 
-### Install Dependencies
+### Installation
 
 ```bash
+git clone https://github.com/goalixa/goalixa-landing.git
+cd goalixa-landing
 npm install
 ```
 
-### Run Development Server
+### Development
 
 ```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Open http://localhost:3000
 
-### Build for Production
+### Build
 
 ```bash
 npm run build
-```
-
-### Preview Production Build
-
-```bash
 npm run preview
 ```
 
-## 🐳 Docker
+## Deployment
 
-### Build Docker Image
+### Docker
 
 ```bash
 docker build -t goalixa-landing:latest .
-```
-
-### Run Docker Container
-
-```bash
 docker run -p 80:80 goalixa-landing:latest
 ```
 
-## 🚢 Deployment
-
-This project is deployed to Kubernetes using ArgoCD GitOps.
-
-### Kubernetes with Helm
+### Kubernetes
 
 ```bash
 helm upgrade --install goalixa-landing ./helm \
-  --namespace goalixa-landing \
-  --create-namespace \
-  --values ./helm/values-production.yaml
+  --namespace goalixa \
+  --create-namespace
 ```
 
-### CI/CD Pipeline
+## Customization
 
-GitHub Actions workflow automatically:
-1. Builds Docker image on push to `main`
-2. Pushes to Harbor registry
-3. Updates ArgoCD application
-4. ArgoCD syncs deployment
+### Content Updates
 
-## Security
+Edit `src/lib/constants.ts` to update:
 
-### Content Security Policy (CSP)
+- Features list
+- FAQ items
+- Testimonials
+- Pricing plans
 
-Configure at the ingress level:
+### Design System
 
-```yaml
-nginx.ingress.kubernetes.io/configuration-snippet: |
-    add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://api.goalixa.com; font-src 'self' data:;";
-```
+| Element | Value |
+|---------|-------|
+| Primary Color | `#0066FF` |
+| Font | Inter |
+| Base Spacing | 4px |
 
-### Security Headers
+## Performance
 
-The service should be behind nginx-ingress with:
-- **TLS 1.3**: Minimum TLS 1.2
-- **HSTS**: Enabled with subdomains
-- **X-Frame-Options**: DENY
-- **X-Content-Type-Options**: nosniff
+| Metric | Target |
+|--------|--------|
+| Lighthouse Score | 95+ |
+| First Contentful Paint | < 1.5s |
+| Bundle Size | < 200KB gzipped |
 
-### Production Checklist
+## License
 
-- [ ] HTTPS enforced (redirect HTTP to HTTPS)
-- [ ] Security headers configured
-- [ ] CSP policy defined
-- [ ] Resource limits set
-- [ ] Health checks configured
-
-## 📊 Performance Targets
-
-- **Lighthouse Score**: 95+
-- **First Contentful Paint**: < 1.5s
-- **Bundle Size**: < 200KB gzipped
-
-## 🎨 Design System
-
-- **Primary Color**: #0066FF (Electric Blue)
-- **Typography**: Inter (display + body)
-- **Spacing**: 4px base unit
-- **Animations**: Framer Motion with reduced-motion support
-
-## 📝 Content Updates
-
-To update content (features, FAQs, etc.), edit:
-- `src/lib/constants.ts`
-
-## 🔧 Tech Stack
-
-- **React 18.3**
-- **TypeScript 5.4**
-- **Vite 5.1**
-- **TailwindCSS 3.4**
-- **Framer Motion 11.0**
-- **Lucide Icons**
-
-## 📄 License
-
-Created by Amirreza Rezaie. All rights reserved.
+MIT License - see [LICENSE](LICENSE) for details.
 
 ---
 
-**Last Updated**: 2026-05-13
-**Version**: 2.1.0
-**Production Ready**: ✅ Yes
-
+Built by [Amirreza Rezaie](https://github.com/amirrezarezaie)
