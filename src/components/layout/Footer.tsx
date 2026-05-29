@@ -1,27 +1,26 @@
-import { Github, Twitter, Instagram } from 'lucide-react'
+import { Github, Linkedin, BookOpen } from 'lucide-react'
 
 const footerLinks = {
   project: [
+    { label: 'About Me', href: '#about' },
+    { label: 'Technical Blog', href: 'https://blog.goalixa.com' },
     { label: 'GitHub Repository', href: 'https://github.com/AmirrezaRezaie/Goalixa' },
-    { label: 'Documentation', href: '#' },
-    { label: 'Releases', href: '#' },
   ],
   support: [
-    { label: 'Help Center', href: '#' },
-    { label: 'Contact Us', href: '#' },
+    { label: 'Documentation', href: '#' },
+    { label: 'Contact Us', href: 'mailto:82rezaeei@gmail.com' },
     { label: 'FAQ', href: '#faq' },
   ],
   legal: [
     { label: 'Privacy Policy', href: '#' },
     { label: 'Terms of Service', href: '#' },
-    { label: 'Cookie Policy', href: '#' },
   ],
 }
 
 const socialLinks = [
-  { icon: Github, href: 'https://github.com/AmirrezaRezaie/Goalixa', label: 'GitHub' },
-  { icon: Twitter, href: '#', label: 'Twitter' },
-  { icon: Instagram, href: '#', label: 'Instagram' },
+  { icon: Github, href: 'https://github.com/AmirrezaRezaie', label: 'GitHub' },
+  { icon: Linkedin, href: 'https://linkedin.com/in/amirreza-rezaie-', label: 'LinkedIn' },
+  { icon: BookOpen, href: 'https://blog.goalixa.com', label: 'Blog' },
 ]
 
 export default function Footer() {
