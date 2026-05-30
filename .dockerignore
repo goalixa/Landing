@@ -37,4 +37,4 @@ k8s
 # Misc
 .DS_Store
 *.pem
-.env.local
+.env.local# Rebuild trigger: Sat May 30 10:54:46 +0330 2026
