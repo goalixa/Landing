@@ -116,45 +116,42 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Login to Harbor
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ secrets.HARBOR_USERNAME }}
-          password: ${{ secrets.HARBOR_PASSWORD }}
+      - name: Install crane
+        run: |
+          curl -sL "https://github.com/google/go-containerregistry/releases/latest/download/go-containerregistry_Linux_x86_64.tar.gz" | tar -xzf - crane
+          ./crane auth login harbor.goalixa.com -u '${{ secrets.HARBOR_USERNAME }}' -p '${{ secrets.HARBOR_PASSWORD }}'
 
-      - name: Extract Docker metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ steps.config.outputs.repository }}
-          tags: |
-            type=raw,value=${{ steps.config.outputs.image_tag }}
-            type=raw,value=${{ steps.config.outputs.image_tag_latest }}
-
-      - name: Build and push Docker image
+      - name: Build and push multi-arch image
         if: github.event_name == 'push'
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          push: true
-          platforms: linux/amd64,linux/arm64
-          tags: ${{ steps.meta.outputs.tags }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          labels: |
-            org.opencontainers.image.source=${{ github.repositoryUrl }}
-            org.opencontainers.image.revision=${{ github.sha }}
-            org.opencontainers.image.created=${{ github.event.head_commit.timestamp }}
+        run: |
+          IMAGE="${{ env.REGISTRY }}/${{ steps.config.outputs.repository }}"
+          SHA_TAG="${{ steps.config.outputs.image_tag }}"
+
+          # Build and push amd64
+          docker buildx build --platform linux/amd64 --load --tag ${IMAGE}:latest-amd64 .
+          docker save ${IMAGE}:latest-amd64 -o image-amd64.tar
+          ./crane push image-amd64.tar ${IMAGE}:latest-amd64
+
+          # Build and push arm64
+          docker buildx build --platform linux/arm64 --load --tag ${IMAGE}:latest-arm64 .
+          docker save ${IMAGE}:latest-arm64 -o image-arm64.tar
+          ./crane push image-arm64.tar ${IMAGE}:latest-arm64
+
+          # Create multi-arch manifest for latest
+          ./crane index append \
+            --manifest ${IMAGE}:latest-amd64 \
+            --manifest ${IMAGE}:latest-arm64 \
+            --tag ${IMAGE}:latest
+
+          # Also tag with SHA
+          ./crane tag ${IMAGE}:latest ${IMAGE}:${SHA_TAG}
+
+          echo "Pushed multi-arch image: ${IMAGE}:latest and ${IMAGE}:${SHA_TAG}"
 
       - name: Build Docker image (PR - no push)
         if: github.event_name == 'pull_request'
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          push: false
-          platforms: linux/amd64
-          cache-from: type=gha
+        run: |
+          docker buildx build --platform linux/amd64 --load --tag test-image .
 
       - name: Setup kubectl
         run: |
